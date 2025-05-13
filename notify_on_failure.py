@@ -25,6 +25,9 @@ build_number = os.getenv("BUILD_NUMBER", "Unknown")
 job_name = os.getenv("JOB_NAME", "Unknown")
 build_url = os.getenv("BUILD_URL", "Unknown")
 
+# === Check if JIRA section should be skipped ===
+disable_jira = os.getenv("DISABLE_JIRA", "false").lower() == "true"
+
 # === Validation ===
 missing_vars = []
 for var in ["JIRA_USER", "JIRA_API_TOKEN", "JIRA_PROJECT_KEY"]:
@@ -34,9 +37,6 @@ for var in ["JIRA_USER", "JIRA_API_TOKEN", "JIRA_PROJECT_KEY"]:
 if missing_vars:
     print(f"❌ Missing environment variables: {', '.join(missing_vars)}")
     sys.exit(1)
-
-# === Check if JIRA section should be skipped ===
-disable_jira = os.getenv("DISABLE_JIRA", "false").lower() == "true"
 
 # === Summary and Description for JIRA (Only if JIRA is not disabled) ===
 if not disable_jira:
