@@ -7,9 +7,6 @@ import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# === Configuration ===
-jira_base_url = "yourcompany.atlassian.net"  # No https:// here
-jira_api_path = "/rest/api/2/issue"
 
 # Email Configuration
 EMAIL = "siddhesh10k@gmail.com"
@@ -24,7 +21,6 @@ build_url = os.getenv("BUILD_URL", "Unknown")
 subject = f"Build Failed: {job_name} #{build_number}"
 email_body = f"""
 Build failed for job: {job_name} #{build_number}
-Jira Ticket: {issue_url}
 Build URL: {build_url}
 
 Description:
