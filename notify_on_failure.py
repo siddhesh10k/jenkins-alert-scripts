@@ -16,6 +16,10 @@ EMAIL = "siddhesh10k@gmail.com"
 PASSWORD = "giwo bvcf pejf knwy"
 TO_EMAIL = "siddhesh.kirdat@ext.arconnet.com"
 
+build_number = os.getenv("BUILD_NUMBER", "Unknown")
+job_name = os.getenv("JOB_NAME", "Unknown")
+build_url = os.getenv("BUILD_URL", "Unknown")
+
 # === Email Sending Logic ===
 subject = f"Build Failed: {job_name} #{build_number}"
 email_body = f"""
