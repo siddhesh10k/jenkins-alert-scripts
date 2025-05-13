@@ -1,13 +1,15 @@
 import os
 import sys
 import smtplib
-import requests
-from requests.auth import HTTPBasicAuth
+import json
+import http.client
+import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 # === Configuration ===
-jira_base_url = "https://yourcompany.atlassian.net"  # Replace with your Jira base URL
+jira_base_url = "yourcompany.atlassian.net"  # No https:// here
+jira_api_path = "/rest/api/2/issue"
 
 # Email Configuration
 EMAIL = "siddhesh10k@gmail.com"
@@ -46,38 +48,42 @@ if not disable_jira:
         f"* Build URL: {build_url}\n"
     )
 
-    # === Jira Issue Payload ===
     payload = {
         "fields": {
-            "project": {
-                "key": jira_project_key
-            },
+            "project": { "key": jira_project_key },
             "summary": summary,
             "description": description,
-            "issuetype": {
-                "name": "Bug"
-            }
+            "issuetype": { "name": "Bug" }
         }
     }
 
-    # === Jira API Call ===
-    url = f"{jira_base_url}/rest/api/2/issue"
-    response = requests.post(
-        url,
-        json=payload,
-        auth=HTTPBasicAuth(jira_user, jira_token),
-        headers={"Content-Type": "application/json"}
-    )
+    try:
+        # Prepare Basic Auth header
+        auth = f"{jira_user}:{jira_token}"
+        encoded_auth = base64.b64encode(auth.encode()).decode()
 
-    # === Jira Response Handling ===
-    if response.status_code == 201:
-        issue_key = response.json().get("key", "UNKNOWN")
-        print(f"✅ Jira ticket created successfully: {issue_key}")
-        issue_url = f"{jira_base_url}/browse/{issue_key}"
-    else:
-        print("❌ Failed to create Jira ticket")
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.text}")
+        # Connect to JIRA
+        conn = http.client.HTTPSConnection(jira_base_url)
+        headers = {
+            "Authorization": f"Basic {encoded_auth}",
+            "Content-Type": "application/json"
+        }
+
+        conn.request("POST", jira_api_path, body=json.dumps(payload), headers=headers)
+        response = conn.getresponse()
+        response_body = response.read().decode()
+
+        if response.status == 201:
+            issue_key = json.loads(response_body).get("key", "UNKNOWN")
+            print(f"✅ Jira ticket created successfully: {issue_key}")
+            issue_url = f"https://{jira_base_url}/browse/{issue_key}"
+        else:
+            print("❌ Failed to create Jira ticket")
+            print(f"Status Code: {response.status}")
+            print(f"Response: {response_body}")
+            sys.exit(1)
+    except Exception as e:
+        print(f"❌ Exception while creating Jira ticket: {str(e)}")
         sys.exit(1)
 else:
     print("⚠️ JIRA ticket creation is disabled by DISABLE_JIRA environment variable.")
@@ -86,18 +92,17 @@ else:
 # === Email Sending Logic ===
 subject = f"Build Failed: {job_name} #{build_number}"
 email_body = f"""
-    Build failed for job: {job_name} #{build_number}
-    Jira Ticket: {issue_url}
-    Build URL: {build_url}
+Build failed for job: {job_name} #{build_number}
+Jira Ticket: {issue_url}
+Build URL: {build_url}
 
-    Description:
-    *Build Failure Notification*
-    * Job: {job_name}
-    * Build Number: {build_number}
-    * Build URL: {build_url}
+Description:
+*Build Failure Notification*
+* Job: {job_name}
+* Build Number: {build_number}
+* Build URL: {build_url}
 """
 
-# Prepare Email Message
 msg = MIMEMultipart()
 msg['From'] = EMAIL
 msg['To'] = TO_EMAIL
