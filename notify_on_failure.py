@@ -1,48 +1,24 @@
-import os
-import sys
 import smtplib
-import json
-import http.client
-import base64
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import sys
+import os
 
+# Read console log from stdin
+log_content = sys.stdin.read()
 
-# Email Configuration
-EMAIL = "siddhesh10k@gmail.com"
-PASSWORD = "giwo bvcf pejf knwy"
-TO_EMAIL = "siddhesh.kirdat@ext.arconnet.com"
+sender = os.environ.get('EMAIL')
+password = os.environ.get('PASSWORD')
+receiver = sender  # Send to self
 
-build_number = os.getenv("BUILD_NUMBER", "Unknown")
-job_name = os.getenv("JOB_NAME", "Unknown")
-build_url = os.getenv("BUILD_URL", "Unknown")
+msg = MIMEText(log_content)
+msg['Subject'] = "🚨 Jenkins Build Failed — Real-Time Console Log"
+msg['From'] = sender
+msg['To'] = receiver
 
-# === Email Sending Logic ===
-subject = f"Build Failed: {job_name} #{build_number}"
-email_body = f"""
-Build failed for job: {job_name} #{build_number}
-Build URL: {build_url}
-
-Description:
-*Build Failure Notification*
-* Job: {job_name}
-* Build Number: {build_number}
-* Build URL: {build_url}
-"""
-
-msg = MIMEMultipart()
-msg['From'] = EMAIL
-msg['To'] = TO_EMAIL
-msg['Subject'] = subject
-msg.attach(MIMEText(email_body, 'plain'))
-
-# Send Email
 try:
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(EMAIL, PASSWORD)
-        server.sendmail(EMAIL, TO_EMAIL, msg.as_string())
-        print(f"✅ Email sent successfully to {TO_EMAIL}")
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(sender, password)
+        server.sendmail(sender, [receiver], msg.as_string())
+        print("✅ Email sent successfully.")
 except Exception as e:
-    print(f"❌ Failed to send email: {str(e)}")
-    sys.exit(1)
+    print(f"❌ Failed to send email: {e}")
