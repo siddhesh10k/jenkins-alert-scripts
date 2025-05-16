@@ -21,10 +21,25 @@ issue_data = {
     "fields": {
         "project": {"key": project_key},
         "summary": f"Jenkins build failed: {job_name} #{build_number}",
-        "description": f"The Jenkins build failed. Console output:\n\n{console_log[:1000]}...",
+        "description": {
+            "type": "doc",
+            "version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"The Jenkins build failed. Console output:\n\n{console_log[:1000]}..."
+                        }
+                    ]
+                }
+            ]
+        },
         "issuetype": {"name": "Task"}
     }
 }
+
 
 # Prepare auth and headers
 auth_string = f"{jira_user}:{jira_token}"
