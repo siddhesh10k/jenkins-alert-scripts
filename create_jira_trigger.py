@@ -26,14 +26,31 @@ description = (
 )
 
 # Jira issue payload (using plain text description)
+description = "Jenkins build failed.\nPlease see the attached log file for details."
+
 issue_data = {
     "fields": {
         "project": {"key": project_key},
         "summary": summary,
-        "description": description,
+        "description": {
+            "type": "doc",
+            "version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": description
+                        }
+                    ]
+                }
+            ]
+        },
         "issuetype": {"name": "Task"}
     }
 }
+
 
 # Prepare auth and headers
 auth_string = f"{jira_user}:{jira_token}"
