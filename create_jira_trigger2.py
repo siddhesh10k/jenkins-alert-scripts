@@ -65,36 +65,39 @@ response = conn.getresponse()
 response_body = response.read().decode()
 
 def upload_attachment(issue_key, file_path):
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+        print(f"❌ File '{file_path}' does not exist or is empty.")
+        return
+
     conn = http.client.HTTPSConnection(parsed_url.netloc)
     with open(file_path, 'rb') as file:
         file_data = file.read()
-    boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
-    body = (
-        f"--{boundary}\r\n"
-        f'Content-Disposition: form-data; name="file"; filename="{os.path.basename(file_path)}"\r\n'
-        f"Content-Type: application/octet-stream\r\n\r\n"
-    ).encode() + file_data + f"\r\n--{boundary}--\r\n".encode()
 
-    attachment_headers = {
+    boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+    crlf = "\r\n"
+    file_name = os.path.basename(file_path)
+
+    # Construct multipart body
+    body = (
+        f"--{boundary}{crlf}"
+        f'Content-Disposition: form-data; name="file"; filename="{file_name}"{crlf}'
+        f"Content-Type: application/octet-stream{crlf}{crlf}"
+    ).encode() + file_data + f"{crlf}--{boundary}--{crlf}".encode()
+
+    headers = {
         "Authorization": f"Basic {auth_bytes}",
         "X-Atlassian-Token": "no-check",
-        "Content-Type": f"multipart/form-data; boundary={boundary}"
+        "Content-Type": f"multipart/form-data; boundary={boundary}",
+        "Content-Length": str(len(body))
     }
 
     conn.request(
         "POST",
         f"/rest/api/3/issue/{issue_key}/attachments",
         body=body,
-        headers=attachment_headers
+        headers=headers
     )
-    resp = conn.getresponse()
-    print(f"📎 Attachment upload status: {resp.status}")
-    print(resp.read().decode())
+    response = conn.getresponse()
+    print(f"📎 Attachment upload status: {response.status}")
+    print(response.read().decode())
 
-if response.status == 201:
-    issue_key = json.loads(response_body).get("key")
-    print(f"✅ Jira ticket created successfully: {issue_key}")
-    upload_attachment(issue_key, log_filename)
-else:
-    print(f"❌ Failed to create Jira ticket: {response.status}")
-    print(response_body)
