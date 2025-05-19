@@ -12,14 +12,20 @@ jira_url = os.environ['JIRA_URL']
 project_key = os.environ['JIRA_PROJECT_KEY']
 job_name = os.environ.get('JOB_NAME')
 build_number = os.environ.get('BUILD_NUMBER')
-log_filename = f"console_output_{build_number}.txt"
+# Read log filename from command-line argument
+if len(sys.argv) < 2:
+    print("❌ Missing log file path as argument.")
+    sys.exit(1)
 
-# Read console log from file (NOT stdin)
-if os.path.exists(log_filename):
+log_filename = sys.argv[1]
+
+if os.path.exists(log_filename) and os.path.getsize(log_filename) > 0:
     with open(log_filename, 'r') as f:
         console_log = f.read()
 else:
-    console_log = "⚠️ Console log file not found."
+    print(f"⚠️ Console log file '{log_filename}' not found or empty.")
+    console_log = "⚠️ Log file not found or is empty."
+
 
 # Summary and description
 summary = f"Jenkins build failed: {job_name} #{build_number}"
